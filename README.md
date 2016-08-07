@@ -41,3 +41,9 @@ jira2kube \
   -username kelseyhightower \
   -password <password>
 ```
+
+```
+2016/08/07 11:54:39 Processing 1 issues.
+2016/08/07 11:54:39 Processing issue 10000
+2016/08/07 11:54:39 Deployed container nginx:1.10 successfully
+```

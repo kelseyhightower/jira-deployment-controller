@@ -1,14 +1,14 @@
-# Jira Deploy
+# jira2kube
 
 WIP: Jira to Kubernetes bridge. Stay tunned!
 
 ## Usage
 
 ```
-jira-deploy -h
+jira2kube -h
 ```
 ```
-Usage of jira-deploy:
+Usage of jira2kube:
   -approved-status-id string
     	The status ID that marks an issue approved.
   -done-status-id string
@@ -31,7 +31,7 @@ Usage of jira-deploy:
 ### Example
 
 ```
-jira-deploy \
+jira2kube \
   -host http://127.0.0.1:8080 \
   -done-status-id 31 \
   -approved-status-id 11 \

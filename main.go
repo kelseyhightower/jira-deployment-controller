@@ -126,6 +126,16 @@ func processIssues() {
 		}
 
 		// Do the deployment.
+		err := syncDeployment("adhoc", containerImageName, replicas)
+		if err != nil {
+			// Mark the issue failed.
+			_, terr := jiraClient.Issue.DoTransition(i.ID, failTransitionId)
+			if terr != nil {
+				log.Println(terr)
+			}
+			log.Println(err)
+			continue
+		}
 		message := fmt.Sprintf("Deployed container %s", containerImageName)
 		_, _, err = jiraClient.Issue.AddComment(i.ID, &jira.Comment{Body: message})
 		if err != nil {

@@ -8,6 +8,12 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 )
 
+type customFields struct {
+	image    string
+	replicas int
+	expose   bool
+}
+
 func processIssues() {
 	jiraClient, err := jira.NewClient(nil, host)
 	if err != nil {
@@ -43,47 +49,10 @@ func processIssues() {
 			continue
 		}
 
-		// Extract deployment info from the Jira custom fields.
-		image := ""
-		replicas := 0
-		expose := false
-
-		req, _ := jiraClient.NewRequest("GET", "rest/api/2/issue/"+issue.ID, nil)
-		jiraIssue := new(map[string]interface{})
-		_, err = jiraClient.Do(req, issue)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		m := *jiraIssue
-		f := m["fields"]
-
-		if rec, ok := f.(map[string]interface{}); ok {
-			for key, val := range rec {
-				switch key {
-				case imageFieldId:
-					image = val.(string)
-				case replicasFieldId:
-					for k, v := range val.(map[string]interface{}) {
-						if k == "value" {
-							i, err := strconv.Atoi(v.(string))
-							if err != nil {
-								log.Println(err)
-								continue
-							}
-							replicas = i
-						}
-					}
-				case exposeFieldId:
-					if val != nil {
-						expose = true
-					}
-				}
-			}
-		}
+		cf, err := getCustomFields(jiraClient, issue.ID)
 
 		// Do the deployment.
-		err := syncDeployment("adhoc", image, replicas)
+		err = syncDeployment("adhoc", cf.image, cf.replicas)
 		if err != nil {
 			log.Println(err)
 
@@ -95,7 +64,7 @@ func processIssues() {
 			continue
 		}
 
-		message := fmt.Sprintf("Deployed image: %s replicas: %d exposed: %v successfully.", image, replicas, expose)
+		message := fmt.Sprintf("Deployed image: %s replicas: %d exposed: %v successfully.", cf.image, cf.replicas, cf.expose)
 		log.Println(message)
 
 		_, _, err = jiraClient.Issue.AddComment(issue.ID, &jira.Comment{Body: message})
@@ -110,4 +79,40 @@ func processIssues() {
 			continue
 		}
 	}
+}
+
+func getCustomFields(client *jira.Client, issueID string) (customFields, error) {
+	var cf customFields
+
+	req, _ := client.NewRequest("GET", "rest/api/2/issue/"+issueID, nil)
+	data := new(map[string]interface{})
+	_, err := client.Do(req, data)
+	if err != nil {
+		return cf, err
+	}
+
+	d := *data
+	f := d["fields"]
+	if fields, ok := f.(map[string]interface{}); ok {
+		for field, value := range fields {
+			switch field {
+			case imageFieldId:
+				cf.image = value.(string)
+			case replicasFieldId:
+				for k, v := range value.(map[string]interface{}) {
+					if k == "value" {
+						cf.replicas, err = strconv.Atoi(v.(string))
+						if err != nil {
+							return cf, err
+						}
+					}
+				}
+			case exposeFieldId:
+				if value != nil {
+					cf.expose = true
+				}
+			}
+		}
+	}
+	return cf, nil
 }

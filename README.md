@@ -63,5 +63,5 @@ kubectl create secret generic jira --from-literal=password=XXXXXXXX
 ### Create Jira Deployment Controller Deployment
 
 ```
-kubectl create -f jira-deployment-controller.yaml
+kubectl create -f deployments/jira-deployment-controller.yaml
 ```

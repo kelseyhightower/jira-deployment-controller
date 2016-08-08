@@ -16,6 +16,7 @@ var (
 	host                   string
 	imageFieldId           string
 	inProgressTransitionId string
+	nameFieldId            string
 	password               string
 	replicasFieldId        string
 	successTransitionId    string
@@ -30,6 +31,7 @@ func main() {
 	flag.StringVar(&host, "host", "http://127.0.0.1:8080", "The Jira host address.")
 	flag.StringVar(&imageFieldId, "image-field-id", "", "The image custom field ID.")
 	flag.StringVar(&inProgressTransitionId, "in-progress-transition-id", "", "The in progress transition ID.")
+	flag.StringVar(&nameFieldId, "name-field-id", "", "The name custom field ID.")
 	flag.StringVar(&replicasFieldId, "replicas-field-id", "", "The replicas custom field ID.")
 	flag.StringVar(&successTransitionId, "success-transition-id", "", "The success transition ID.")
 	flag.IntVar(&syncInterval, "sync-interval", 30, "The sync interval in seconds.")

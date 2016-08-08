@@ -40,6 +40,7 @@ jira-deployment-controller \
   -in-progress-transition-id 21 \
   -success-transition-id 31 \
   -fail-transition-id 41 \
+  -name-field-id customfield_10104 \
   -image-field-id customfield_10103 \
   -replicas-field-id customfield_10102 \
   -expose-field-id customfield_10101 \

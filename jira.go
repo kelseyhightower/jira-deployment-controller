@@ -12,6 +12,7 @@ type customFields struct {
 	image    string
 	replicas int
 	expose   bool
+	name     string
 }
 
 func processIssues() {
@@ -52,7 +53,7 @@ func processIssues() {
 		cf, err := getCustomFields(jiraClient, issue.ID)
 
 		// Do the deployment.
-		err = syncDeployment("adhoc", cf.image, cf.replicas)
+		err = syncDeployment(cf.name, cf.image, cf.replicas)
 		if err != nil {
 			log.Println(err)
 
@@ -96,6 +97,8 @@ func getCustomFields(client *jira.Client, issueID string) (customFields, error) 
 	if fields, ok := f.(map[string]interface{}); ok {
 		for field, value := range fields {
 			switch field {
+			case nameFieldId:
+				cf.name = value.(string)
 			case imageFieldId:
 				cf.image = value.(string)
 			case replicasFieldId:

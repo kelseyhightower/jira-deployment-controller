@@ -1,3 +1,4 @@
 bash build
 docker build -t kelseyhightower/jira-deployment-controller:0.0.1 .
 docker push kelseyhightower/jira-deployment-controller:0.0.1
+rm jira-deployment-controller

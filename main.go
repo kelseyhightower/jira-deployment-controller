@@ -19,6 +19,7 @@ var (
 	password               string
 	replicasFieldId        string
 	successTransitionId    string
+	syncInterval           int
 	username               string
 )
 
@@ -31,18 +32,20 @@ func main() {
 	flag.StringVar(&inProgressTransitionId, "in-progress-transition-id", "", "The in progress transition ID.")
 	flag.StringVar(&replicasFieldId, "replicas-field-id", "", "The replicas custom field ID.")
 	flag.StringVar(&successTransitionId, "success-transition-id", "", "The success transition ID.")
+	flag.IntVar(&syncInterval, "sync-interval", 30, "The sync interval in seconds.")
 
 	username = os.Getenv("JIRA_USERNAME")
 	password = os.Getenv("JIRA_PASSWORD")
 
 	flag.Parse()
+	log.Println("Starting Jira Deployment Controller...")
 	processIssues()
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	for {
 		select {
-		case <-time.After(30 * time.Second):
+		case <-time.After(time.Duration(syncInterval) * time.Second):
 			processIssues()
 		case <-signalChan:
 			log.Printf("Shutdown signal received, exiting...")

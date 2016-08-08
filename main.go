@@ -4,33 +4,45 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
 )
 
 var (
-	approvedStatusId   string
-	doneStatusId       string
-	imageFieldId       string
-	inProgressStatusId string
-	projectId          string
-	username           string
-	password           string
-	host               string
+	successTransitionId    string
+	failTransitionId       string
+	inProgressTransitionId string
+	imageFieldId           string
+	replicasFieldId        string
+	exposeFieldId          string
+	username               string
+	password               string
+	host                   string
 )
 
 var jiraClient *jira.Client
+var filterId string
 
 func main() {
-	flag.StringVar(&approvedStatusId, "approved-status-id", "", "The status ID that marks an issue approved.")
-	flag.StringVar(&doneStatusId, "done-status-id", "", "The status ID that marks an issue done.")
-	flag.StringVar(&imageFieldId, "image-field-id", "", "The container image custom field ID.")
-	flag.StringVar(&inProgressStatusId, "in-progress-status-id", "", "The status ID that marks an issue in progress.")
-	flag.StringVar(&projectId, "project-id", "", "The Jira project ID used for Kubernetes deployments.")
-	flag.StringVar(&username, "username", "", "The Jira login username.")
-	flag.StringVar(&password, "password", "", "The Jira login password.")
+	// Jira transition ID mapping.
+	flag.StringVar(&successTransitionId, "success-transition-id", "", "The transition ID to use when the process succeeds.")
+	flag.StringVar(&failTransitionId, "fail-transition-id", "", "The transition ID to use when the process fails.")
+	flag.StringVar(&inProgressTransitionId, "in-progress-transition-id", "", "The transition ID that marks an issue in progress.")
+
+	// Jira custom field mappings.
+	flag.StringVar(&imageFieldId, "image-field-id", "", "The image custom field ID.")
+	flag.StringVar(&replicasFieldId, "replicas-field-id", "", "The replicas custom field ID.")
+	flag.StringVar(&exposeFieldId, "expose-field-id", "", "The expose custom field ID.")
+
+	// Jira login info.
 	flag.StringVar(&host, "host", "http://127.0.0.1:8080", "The Jira host address.")
+	flag.StringVar(&filterId, "filter-id", "", "The Jira filter id to search for deployment issues")
+
+	username = os.Getenv("JIRA_USERNAME")
+	password = os.Getenv("JIRA_PASSWORD")
 
 	flag.Parse()
 
@@ -55,7 +67,7 @@ func main() {
 }
 
 func processIssues() {
-	query := fmt.Sprintf("project=%s AND status=\"%s\"", projectId, "To Do")
+	query := fmt.Sprintf("filter=%s", filterId)
 	issues, resp, err := jiraClient.Issue.Search(query, nil)
 	if err != nil {
 		log.Println(err)
@@ -68,7 +80,7 @@ func processIssues() {
 		log.Println("Processing issue", i.ID)
 
 		// Mark the issue in progress.
-		_, err = jiraClient.Issue.DoTransition(i.ID, inProgressStatusId)
+		_, err = jiraClient.Issue.DoTransition(i.ID, inProgressTransitionId)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -76,6 +88,8 @@ func processIssues() {
 
 		// Extract the container image name from the container image custom field.
 		containerImageName := ""
+		replicas := 0
+		expose := false
 
 		req, _ := jiraClient.NewRequest("GET", "rest/api/2/issue/"+i.ID, nil)
 		issue := new(map[string]interface{})
@@ -89,10 +103,23 @@ func processIssues() {
 
 		if rec, ok := f.(map[string]interface{}); ok {
 			for key, val := range rec {
-				if key == imageFieldId {
-					if vmap, ok := val.(map[string]interface{}); ok {
-						containerImageName = vmap["value"].(string)
-						break
+				switch key {
+				case imageFieldId:
+					containerImageName = val.(string)
+				case replicasFieldId:
+					for k, v := range val.(map[string]interface{}) {
+						if k == "value" {
+							i, err := strconv.Atoi(v.(string))
+							if err != nil {
+								log.Println(err)
+								continue
+							}
+							replicas = i
+						}
+					}
+				case exposeFieldId:
+					if val != nil {
+						expose = true
 					}
 				}
 			}
@@ -105,11 +132,11 @@ func processIssues() {
 			log.Println(err)
 			continue
 		}
-		_, err = jiraClient.Issue.DoTransition(i.ID, doneStatusId)
+		_, err = jiraClient.Issue.DoTransition(i.ID, successTransitionId)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		log.Printf("Deployed container %s successfully", containerImageName)
+		log.Printf("Deployed container: %s replicas: %d exposed: %v successfully", containerImageName, replicas, expose)
 	}
 }

@@ -1,49 +1,67 @@
-# jira2kube
+# jira-deployment-controller
 
 WIP: Jira to Kubernetes bridge. Stay tunned!
 
 ## Usage
 
 ```
-jira2kube -h
+jira-deployment-controller -h
 ```
 ```
-Usage of jira2kube:
-  -approved-status-id string
-    	The status ID that marks an issue approved.
-  -done-status-id string
-    	The status ID that marks an issue done.
+Usage of jira-deployment-controller:
+  -expose-field-id string
+    	The expose custom field ID.
+  -fail-transition-id string
+    	The transition ID to use when the process fails.
+  -filter-id string
+    	The Jira filter id to search for deployment issues
   -host string
     	The Jira host address. (default "http://127.0.0.1:8080")
   -image-field-id string
-    	The container image custom field ID.
-  -in-progress-status-id string
-    	The status ID that marks an issue in progress.
-  -password string
-    	The Jira login password.
-  -project-id string
-    	The Jira project ID used for Kubernetes deployments.
-  -username string
-    	The Jira login username.
-
+    	The image custom field ID.
+  -in-progress-transition-id string
+    	The transition ID that marks an issue in progress.
+  -replicas-field-id string
+    	The replicas custom field ID.
+  -success-transition-id string
+    	The transition ID to use when the process succeeds.
 ```
 
 ### Example
 
 ```
-jira2kube \
+export JIRA_USERNAME="ninja"
+export JIRA_PASSWORD=""
+```
+
+```
+jira-deployment-controller \
   -host http://127.0.0.1:8080 \
-  -done-status-id 31 \
-  -approved-status-id 11 \
-  -in-progress-status-id 21 \
-  -image-field-id customfield_10100 \
-  -project-id KUBE \
-  -username kelseyhightower \
-  -password <password>
+  -in-progress-transition-id 21 \
+  -success-transition-id 31 \
+  -fail-transition-id 41 \
+  -image-field-id customfield_10103 \
+  -replicas-field-id customfield_10102 \
+  -expose-field-id customfield_10101 \
+  -filter-id deployments
 ```
 
 ```
 2016/08/07 11:54:39 Processing 1 issues.
 2016/08/07 11:54:39 Processing issue 10000
-2016/08/07 11:54:39 Deployed container nginx:1.10 successfully
+2016/08/07 11:54:39 Deployed container: nginx:1.10 replicas: 2 exposed: true successfully
+```
+
+## Kubernetes Deployment Example
+
+### Create Jira Secrets
+
+```
+kubectl create secret generic jira --from-literal=password=XXXXXXXX
+```
+
+### Create Jira Deployment Controller Deployment
+
+```
+kubectl create -f jira-deployment-controller.yaml
 ```

@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: jira-deployment-controller
+  name: jira-deployment-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jira-deployment-controller
+      name: jira-deployment-controller
+    spec:
+      containers:
+        - name: jira-deployment-controller
+          image: kelseyhightower/jira-deployment-controller:0.0.1
+          imagePullPolicy: Always
+          env:
+            - name: "JIRA_USERNAME"
+              value: "ninja"
+            - name: "JIRA_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: jira
+                  key: password
+          args:
+            - "-host=http://jira:8080"
+            - "-in-progress-transition-id=21"
+            - "-success-transition-id=31"
+            - "-fail-transition-id=41"
+            - "-image-field-id=customfield_10103"
+            - "-replicas-field-id=customfield_10102"
+            - "-expose-field-id=customfield_10101"
+            - "-filter-id=deployments"
+        - name: kubelet
+          image: kelseyhightower/kubectl:1.2.3
+          args:
+            - "proxy"

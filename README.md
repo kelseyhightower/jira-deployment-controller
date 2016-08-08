@@ -12,19 +12,23 @@ Usage of jira-deployment-controller:
   -expose-field-id string
     	The expose custom field ID.
   -fail-transition-id string
-    	The transition ID to use when the process fails.
+    	The failed transition ID.
   -filter-id string
-    	The Jira filter id to search for deployment issues
+    	The Jira search filter ID
   -host string
     	The Jira host address. (default "http://127.0.0.1:8080")
   -image-field-id string
     	The image custom field ID.
   -in-progress-transition-id string
-    	The transition ID that marks an issue in progress.
+    	The in progress transition ID.
+  -name-field-id string
+    	The name custom field ID.
   -replicas-field-id string
     	The replicas custom field ID.
   -success-transition-id string
-    	The transition ID to use when the process succeeds.
+    	The success transition ID.
+  -sync-interval int
+    	The sync interval in seconds. (default 30)
 ```
 
 ### Example
